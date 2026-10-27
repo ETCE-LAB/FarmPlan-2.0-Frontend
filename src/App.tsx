@@ -1,3 +1,3 @@
 export default function App() {
-  return "Im a Page (:";
+  return 'Im a Page (:';
 }
