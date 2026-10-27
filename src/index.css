@@ -1,0 +1,97 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  --color-brand-900: #1b5e20;
+  --color-brand-700: #2e7d32;
+  --color-brand-300: #81c784;
+  --color-brand-50: #f1f8f1;
+ 
+  --color-brand-fg: #1b5e20;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8faf8;
+  --color-surface-sunken: #eef2ee;
+  --color-line: #dce3dc;
+  --color-line-subtle: #eeeeee;
+  --color-ink: #1f1f1f;
+  --color-ink-soft: #475569;
+  --color-ink-muted: #626b62;
+  --color-ink-faint: #858f86;
+
+  --color-success-bg: #ecfdf5;
+  --color-success-line: #a7f3d0;
+  --color-success-fg: #065f46;
+  --color-warning-bg: #fffbeb;
+  --color-warning-line: #fde68a;
+  --color-warning-fg: #92400e;
+  --color-info-bg: #eff6ff;
+  --color-info-line: #bfdbfe;
+  --color-info-fg: #1e40af;
+  --color-danger-bg: #fff1f2;
+  --color-danger-bg-strong: #ffe4e6;
+  --color-danger-line: #fecdd3;
+  --color-danger-fg: #be123c;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-brand-50: #1a2e1c;
+  --color-brand-fg: #81c784;
+
+  --color-surface: #161b17;
+  --color-surface-muted: #0f1310;
+  --color-surface-sunken: #222a24;
+  --color-line: #2c362e;
+  --color-line-subtle: #232b25;
+
+  --color-ink: #e6ebe6;
+  --color-ink-soft: #c2cbc3;
+  --color-ink-muted: #8f9a90;
+  --color-ink-faint: #6b756c;
+
+  --color-success-bg: #0f2a1f;
+  --color-success-line: #1f5138;
+  --color-success-fg: #6ee7b7;
+  --color-warning-bg: #2b2110;
+  --color-warning-line: #5c4515;
+  --color-warning-fg: #fcd34d;
+  --color-info-bg: #0f1d33;
+  --color-info-line: #1e3a66;
+  --color-info-fg: #93c5fd;
+  --color-danger-bg: #2d1218;
+  --color-danger-bg-strong: #3f1720;
+  --color-danger-line: #6b1f2c;
+  --color-danger-fg: #fda4af;
+}
+
+.dark .fp-tiles-invertible {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+
+.dark .leaflet-container {
+  background: var(--color-surface-muted);
+}
+
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip,
+.dark .leaflet-tooltip,
+.dark .leaflet-bar a,
+.dark .leaflet-control-layers {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+
+.dark .leaflet-control-attribution {
+  background: rgb(22 27 23 / 0.8);
+  color: var(--color-ink-muted);
+}
+
+.dark .leaflet-control-attribution a {
+  color: var(--color-brand-fg);
+}
