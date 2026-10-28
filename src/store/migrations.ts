@@ -33,7 +33,6 @@ export function migratePersistedState(persisted: unknown, version: number): Pers
   return initialPersistedState();
 }
 
-
 interface V0Field {
   id: string;
   name: string;

@@ -20,12 +20,12 @@ interface FarmStoreState extends PersistedFarmState {
 
   addFarm: (farm: Farm, fields: Field[]) => void;
   updateFarm: (id: string, patch: FarmPatch) => void;
-  
+
   deleteFarm: (id: string) => void;
   addFields: (fields: Field[]) => void;
-  
+
   updateField: (id: string, patch: FieldPatch) => void;
-  
+
   deleteField: (id: string) => void;
   snapshot: () => DataSnapshot;
   restore: (snapshot: DataSnapshot) => void;
@@ -130,7 +130,5 @@ export const useFarmStore = create<FarmStoreState>()(
     },
   ),
 );
-
-/
 export const useActiveFarm = () =>
   useFarmStore((s) => s.farms.find((f) => f.id === s.activeFarmId) ?? s.farms[0] ?? null);
