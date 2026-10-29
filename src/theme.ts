@@ -12,7 +12,6 @@ function applyTheme() {
   document.documentElement.classList.toggle('dark', resolveDark(useFarmStore.getState().theme));
 }
 
-
 applyTheme();
 useFarmStore.subscribe((state, prev) => {
   if (state.theme !== prev.theme) applyTheme();
@@ -23,7 +22,6 @@ const subscribeToSystemTheme = (onChange: () => void) => {
   darkQuery.addEventListener('change', onChange);
   return () => darkQuery.removeEventListener('change', onChange);
 };
-
 
 export function useIsDark() {
   const theme = useFarmStore((s) => s.theme);
