@@ -23,15 +23,17 @@ HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) {
   this.dispatchEvent(new Event('close'));
 };
 
+const { default: i18n } = await import('@farm/i18n');
 const { useFarmStore } = await import('@farm/store/useFarmStore');
 const { useUiStore } = await import('@farm/store/useUiStore');
 
-beforeEach(() => {
+beforeEach(async () => {
   act(() => {
     useFarmStore.getState().resetData();
     useFarmStore.setState({ language: 'de', theme: 'light', baseLayer: 'osm' });
     useUiStore.setState({ toasts: [], confirmRequest: null, sidebarOpen: false });
   });
+  await i18n.changeLanguage('de');
 });
 
 afterEach(() => {
