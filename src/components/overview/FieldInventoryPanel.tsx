@@ -9,7 +9,6 @@ import { useFormat } from '@farm/lib/format';
 import { useSearchParam } from '@farm/lib/useSearchParam';
 import type { PlantingPlan } from '@farm/types';
 
-/** Latest revision per field; an active plan wins over newer drafts. */
 function currentPlanByField(plans: PlantingPlan[]) {
   const byField = new Map<string, PlantingPlan>();
   for (const plan of plans) {

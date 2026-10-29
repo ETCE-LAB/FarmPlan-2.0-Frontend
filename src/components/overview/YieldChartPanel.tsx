@@ -4,7 +4,6 @@ import { Card } from '@farm/components/ui/Card';
 import { DemoBadge } from '@farm/components/ui/Badge';
 import { useFormat } from '@farm/lib/format';
 
-// Illustrative succession curve until the optimizer delivers per-plan forecasts.
 const SAMPLE_CURVE = [
   { year: 1, kcalPerM2: 120, stage: 'herbs' },
   { year: 3, kcalPerM2: 480, stage: 'pioneers' },
