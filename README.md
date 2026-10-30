@@ -1,87 +1,89 @@
-# Welcome to React Router!
+# FarmPlan 2.0 – Frontend
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Web app for planning agroforestry farms: map fields, plan treelines and browse the plant catalog.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+React 19 · TypeScript (strict) · Vite 8 · Tailwind CSS v4 · Zustand · react-i18next · Leaflet + Geoman
 
-## Features
+## Quick Start
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
+Requires Node.js 20.19+ or 22.12+ (Vite 8).
 
 ```bash
 npm install
+npm run dev          # http://localhost:3000, /api is proxied to http://localhost:8000
 ```
 
-### Development
+| Script             | Purpose                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| `npm run dev`      | Dev server with HMR                                            |
+| `npm run build`    | Typecheck and production build to `dist/`                      |
+| `npm run preview`  | Serve the production build locally                             |
+| `npm run check`    | Prettier, oxlint, typecheck and Vitest – run before you commit |
+| `npm run test`     | Unit and component tests (Vitest, jsdom)                       |
+| `npm run test:e2e` | Playwright (once: `npx playwright install chromium`)           |
+| `npm run format`   | Format all files with Prettier                                 |
 
-Start the development server with HMR:
+## Status
+
+There is no backend yet. Farms, fields and planting plans live in `localStorage` (`farmplan-storage`);
+placeholder values are marked as **demo data** in the UI.
+
+The app is being migrated from the previous FarmPlan V2 prototype in small steps.
+Already available:
+
+- App shell with sidebar, top bar, global search, light/dark/system theme and German/English
+- Overview dashboard: key figures, field inventory, soil lookup and yield chart
+- Undo for destructive actions, confirm dialog, toasts, error boundary
+
+Coming next: plant catalog, farm list, map editor (draw fields, GeoJSON import/export),
+farm details with treeline preview, settings with backup/restore and end-to-end tests.
+
+## Project Structure
+
+| Path                    | Contents                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `src/pages`             | One file per route                                                                    |
+| `src/components/ui`     | Building blocks: `Card`, `Button`/`buttonClass`, form fields, `Badge`                 |
+| `src/components/shared` | App frame: Sidebar, TopBar, PageHeader, ErrorBoundary, dialog, toasts                 |
+| `src/components/*`      | Feature components, grouped by page (e.g. `overview`)                                 |
+| `src/config`            | Navigation entries                                                                    |
+| `src/lib`               | Pure logic: geometry, agronomy, formatting, URL state                                 |
+| `src/store`             | `useFarmStore` (persisted, versioned migrations), `useUiStore` (toasts, dialog, menu) |
+| `src/types`             | Domain types; geometries are GeoJSON                                                  |
+| `src/i18n`              | Translations; `en.ts` is type-checked against `de.ts`                                 |
+| `src/data/mockData.ts`  | Demo data shaped like the future API                                                  |
+| `src/test`              | Vitest setup and test helpers                                                         |
+
+Imports use the `@farm/*` alias for `src/*`.
+
+## Configuration
+
+| Variable            | Default | Purpose                 |
+| ------------------- | ------- | ----------------------- |
+| `VITE_API_BASE_URL` | `/api`  | Base URL of the backend |
+
+Vite reads it at build time, so set it in `.env` or the build environment.
+
+## Docker
+
+The image builds the app and serves `dist/` with nginx, including the fallback to `index.html` for client-side routes.
 
 ```bash
-npm run dev
+docker build -t farmplan-frontend --build-arg VITE_API_BASE_URL=https://api.example.com .
+docker run -p 8080:80 farmplan-frontend   # http://localhost:8080
 ```
 
-Your application will be available at `http://localhost:5173`.
+## Conventions
 
-## Building for Production
+- **Colors** only via the design tokens in `src/index.css` (`bg-surface`, `text-ink-soft`, `text-brand-fg` …),
+  no hex values or raw palettes like `slate-600`. Dark mode only overrides the variables under `.dark`;
+  `src/styles/contrast.test.ts` checks every token pair against WCAG AA in both themes.
+- **Text** only via `t('…')`. Add new keys to `de.ts` first; TypeScript then requires them in `en.ts`.
+- **Coordinates**: Leaflet uses `[lat, lng]`, storage uses GeoJSON `[lng, lat]` – convert only through `src/lib/geo.ts`.
+- **URL state** via `useSearchParam`; use `useUpdateSearchParams` to change several parameters at once.
+- **Store schema changed?** Bump `STORE_VERSION` in `src/store/migrations.ts` and add a migration.
+- **Headings**: `h1` comes from `PageHeader`, card titles are `h2`.
 
-Create a production build:
+## License
 
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+[AGPL-3.0](LICENSE)
