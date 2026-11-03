@@ -6,6 +6,8 @@ import { ErrorBoundary } from '@farm/components/shared/ErrorBoundary';
 import { ConfirmDialogHost } from '@farm/components/shared/ConfirmDialogHost';
 import { Toaster } from '@farm/components/shared/Toaster';
 import OverviewPage from '@farm/pages/OverviewPage';
+import PlantsPage from '@farm/pages/PlantsPage';
+import PlantDetailPage from '@farm/pages/PlantDetailPage';
 import NotFoundPage from '@farm/pages/NotFoundPage';
 
 const pageFallback = <div className="h-[60vh] rounded-md border border-line bg-surface animate-pulse" />;
@@ -25,6 +27,8 @@ export default function App() {
             <Suspense fallback={pageFallback}>
               <Routes>
                 <Route path="/" element={<OverviewPage />} />
+                <Route path="/plants" element={<PlantsPage />} />
+                <Route path="/plants/:plantId" element={<PlantDetailPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>
