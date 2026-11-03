@@ -34,8 +34,10 @@ Already available:
 - App shell with sidebar, top bar, global search, light/dark/system theme and German/English
 - Overview dashboard: key figures, field inventory, soil lookup and yield chart
 - Undo for destructive actions, confirm dialog, toasts, error boundary
+- Plant catalog with filters and sorting in the URL, plant details
+- Farm list
 
-Coming next: plant catalog, farm list, map editor (draw fields, GeoJSON import/export),
+Coming next: map editor (draw fields, GeoJSON import/export),
 farm details with treeline preview, settings with backup/restore and end-to-end tests.
 
 ## Project Structure

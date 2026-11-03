@@ -6,6 +6,7 @@ import { ErrorBoundary } from '@farm/components/shared/ErrorBoundary';
 import { ConfirmDialogHost } from '@farm/components/shared/ConfirmDialogHost';
 import { Toaster } from '@farm/components/shared/Toaster';
 import OverviewPage from '@farm/pages/OverviewPage';
+import FarmListPage from '@farm/pages/FarmListPage';
 import PlantsPage from '@farm/pages/PlantsPage';
 import PlantDetailPage from '@farm/pages/PlantDetailPage';
 import NotFoundPage from '@farm/pages/NotFoundPage';
@@ -27,6 +28,7 @@ export default function App() {
             <Suspense fallback={pageFallback}>
               <Routes>
                 <Route path="/" element={<OverviewPage />} />
+                <Route path="/farms" element={<FarmListPage />} />
                 <Route path="/plants" element={<PlantsPage />} />
                 <Route path="/plants/:plantId" element={<PlantDetailPage />} />
                 <Route path="*" element={<NotFoundPage />} />
