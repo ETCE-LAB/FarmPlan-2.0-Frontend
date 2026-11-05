@@ -86,6 +86,10 @@ docker run -p 8080:80 farmplan-frontend   # http://localhost:8080
 - **Store schema changed?** Bump `STORE_VERSION` in `src/store/migrations.ts` and add a migration.
 - **Headings**: `h1` comes from `PageHeader`, card titles are `h2`.
 
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for branches, checks, and AI attribution, and [docs/](docs/README.md) for architecture, roadmap, decisions, and legacy parity. AI agents start with [AGENTS.md](AGENTS.md).
+
 ## License
 
 [AGPL-3.0](LICENSE)
