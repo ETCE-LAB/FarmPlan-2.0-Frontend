@@ -35,10 +35,10 @@ Already available:
 - Overview dashboard: key figures, field inventory, soil lookup and yield chart
 - Undo for destructive actions, confirm dialog, toasts, error boundary
 - Plant catalog with filters and sorting in the URL, plant details
-- Farm list
+- Farm list, farm creation and farm details with map editor (draw fields, GeoJSON import/export) and treeline preview
+- Settings with backup and restore
 
-Coming next: map editor (draw fields, GeoJSON import/export),
-farm details with treeline preview, settings with backup/restore and end-to-end tests.
+Coming next: end-to-end tests with Playwright.
 
 ## Project Structure
 
