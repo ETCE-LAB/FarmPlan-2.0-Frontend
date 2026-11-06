@@ -1,4 +1,7 @@
-.react-router
-build
 node_modules
-README.md
+dist
+test-results
+playwright-report
+.git
+.DS_Store
+.env

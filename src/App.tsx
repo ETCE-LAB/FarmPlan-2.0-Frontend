@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { Route, Routes, useLocation } from 'react-router';
 import { Sidebar } from '@farm/components/shared/Sidebar';
 import { TopBar } from '@farm/components/shared/TopBar';
@@ -6,7 +6,14 @@ import { ErrorBoundary } from '@farm/components/shared/ErrorBoundary';
 import { ConfirmDialogHost } from '@farm/components/shared/ConfirmDialogHost';
 import { Toaster } from '@farm/components/shared/Toaster';
 import OverviewPage from '@farm/pages/OverviewPage';
+import FarmListPage from '@farm/pages/FarmListPage';
+import PlantsPage from '@farm/pages/PlantsPage';
+import PlantDetailPage from '@farm/pages/PlantDetailPage';
+import SettingsPage from '@farm/pages/SettingsPage';
 import NotFoundPage from '@farm/pages/NotFoundPage';
+
+const FarmCreatePage = lazy(() => import('@farm/pages/FarmCreatePage'));
+const FarmDetailPage = lazy(() => import('@farm/pages/FarmDetailPage'));
 
 const pageFallback = <div className="h-[60vh] rounded-md border border-line bg-surface animate-pulse" />;
 
@@ -21,11 +28,16 @@ export default function App() {
         <TopBar />
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
-          
           <ErrorBoundary key={pathname}>
             <Suspense fallback={pageFallback}>
               <Routes>
                 <Route path="/" element={<OverviewPage />} />
+                <Route path="/farms" element={<FarmListPage />} />
+                <Route path="/farms/new" element={<FarmCreatePage />} />
+                <Route path="/farms/:farmId" element={<FarmDetailPage />} />
+                <Route path="/plants" element={<PlantsPage />} />
+                <Route path="/plants/:plantId" element={<PlantDetailPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>

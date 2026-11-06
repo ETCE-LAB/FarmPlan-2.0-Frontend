@@ -1,0 +1,61 @@
+# Legacy feature parity
+
+This inventory compares the legacy FarmPlan UI with the current frontend. It is a **source-inspected baseline**, not proof of parity: no capability below has a parity test yet, and statuses are based on reading code, not on acceptance testing.
+
+- **Legacy source:** [ETCE-LAB/FarmPlan](https://github.com/ETCE-LAB/FarmPlan), commit `b0d2848`, directory `src/` (React with JSX, Flask backend in `backend/app.py`).
+- **Intermediate prototype:** the FarmPlan V2 prototype, from which the current code was migrated. It is not the parity reference; it only explains where current code came from.
+- **Review date:** November 5, 2026.
+
+## Status values
+
+| Status  | Meaning                                                                  |
+| ------- | ------------------------------------------------------------------------ |
+| Present | The capability exists in the current UI. It may still run on demo data.  |
+| Partial | Part of the capability exists; the gap is described.                     |
+| Missing | Not implemented.                                                         |
+| Changed | Replaced on purpose by a different solution; needs an explicit decision. |
+| Backend | Blocked on a backend capability; the frontend cannot provide it alone.   |
+
+## Inventory
+
+| #   | Legacy capability                                                                                     | Legacy source                                                                                        | Current frontend                                                                                   | Status            | Backend dependency                        |
+| --- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------- |
+| L1  | Overview key figures: total area, field count, average size, largest farm                             | `components/tabs/overview/StatsRow.jsx`                                                              | `components/overview/StatsRow.tsx`, computed from local data                                       | Present           | Farm/Field                                |
+| L2  | Treeline plant inventory from CSV with search, category filter, pagination, and "reload CSV"          | `components/tabs/inventory/FieldInventoryPanel.jsx`, `/api/treeline/records`, `/api/treeline/import` | Browsing via `pages/PlantsPage.tsx`; no CSV import, no server pagination                           | Partial / Backend | Catalog: records, import                  |
+| L3  | Soil lookup by latitude and longitude via BGR ArcGIS (EPSG:3034/3035 with proj4)                      | `components/tabs/overview/SoilLookupPanel.jsx`, `utils/soilUtils.js`                                 | `components/overview/SoilLookupPanel.tsx` shows demo values (`DemoBadge`)                          | Partial / Backend | Analysis: soil provider adapter           |
+| L4  | Chart of top expected calories by plant                                                               | `components/tabs/planning/YieldChartPanel.jsx`                                                       | `components/overview/YieldChartPanel.tsx` with demo values                                         | Partial / Backend | Planning/Analysis                         |
+| L5  | Farm creation form with name, location, owner name, contact email, and notes                          | `components/tabs/planning/FarmCreationPanel.jsx`                                                     | `pages/FarmCreatePage.tsx` with name, location, climate zone, notes; owner and email not collected | Partial           | Farm, Identity (owner)                    |
+| L6  | Draw, edit, and delete the farm border polygon                                                        | `FarmCreationPanel.jsx`, `planningComponents/map/FieldDrawer.jsx`                                    | Fields are drawn per farm in `FieldsMapEditor`; `Farm.boundary` exists but is not drawn (`null`)   | Partial           | Farm                                      |
+| L7  | Area and perimeter of the drawn polygon                                                               | `FarmCreationPanel.jsx`                                                                              | Gross and net area per field; no perimeter                                                         | Partial           | —                                         |
+| L8  | Location search by coordinates or address (Nominatim)                                                 | `FarmCreationPanel.jsx`, `field/FieldCreationPanel.jsx`                                              | Not implemented                                                                                    | Missing           | Analysis: geocoding adapter               |
+| L9  | Base layers: OpenStreetMap, Esri World Imagery, Google satellite                                      | `planningComponents/map/MapLayers.jsx`, `FieldCreationPanel.jsx`                                     | Street map, Esri imagery, topographic, place labels; no Google layer                               | Changed           | —                                         |
+| L10 | Fields inside a farm with name, crop type, irrigation, and auto spacing                               | `field/FieldCreationPanel.jsx`, `field/FieldPropertiesPanel.jsx`                                     | Fields with name, soil type, pH, exclusion zones; no crop type, irrigation, or auto-spacing toggle | Partial           | Farm/Field                                |
+| L11 | Field climate panel: weather (Bright Sky), solar (Open-Meteo archive), soil (BGR), hardiness zone     | `field/FieldClimatePanel.jsx`, `/api/hardiness/field`                                                | Not implemented                                                                                    | Missing / Backend | Analysis: weather, solar, soil, hardiness |
+| L12 | Plant templates per field: pick plants from the catalog with filters, create and edit templates       | `field/Template.jsx`                                                                                 | Not implemented                                                                                    | Missing           | Planning, Catalog                         |
+| L13 | Drag-and-drop crop placement on the map with auto spacing and inside-field validation                 | `field/DragDropCrops.jsx`, `map/MapCropDropTarget.jsx`, `map/CropPlacementLayer.jsx`                 | Not implemented                                                                                    | Missing           | Planning/Placement                        |
+| L14 | Treeline layer from generated plan placements (optimizer output)                                      | `map/TreelineLayer.jsx`, `planning/utils/treelines.js`                                               | Geometric treeline preview in `lib/treelines.ts` and `TreelinePanel`; no optimizer placements      | Partial / Backend | Planning/Placement (optimizer)            |
+| L15 | Strata legend                                                                                         | `farm/StrataLegend.jsx`                                                                              | `components/plants/StratumBadge.tsx` on plant pages; no map legend                                 | Partial           | —                                         |
+| L16 | Plant inventory: search, filters by type, strata, hardiness zone, pagination, plant profile, calories | `components/tabs/planning/PlantsPanel.jsx`                                                           | `pages/PlantsPage.tsx`, `PlantDetailPage.tsx` with filters and sorting in the URL; 8 demo species  | Partial / Backend | Catalog                                   |
+| L17 | Plant images                                                                                          | `PlantImage.jsx`, `hooks/usePlantImage.js`, `/api/plant-images`                                      | `PlantTaxon.imageUrl` exists; no images shown                                                      | Missing / Backend | Media                                     |
+| L18 | Edit and delete farms including the polygon                                                           | `components/tabs/editing/FarmEditPanel.jsx`                                                          | `pages/FarmDetailPage.tsx` with undo                                                               | Present           | Farm                                      |
+| L19 | Theme: light and dark, plus custom accent, sidebar, background, and card colors                       | `components/tabs/settings/ThemeConfigurationPanel.jsx`                                               | Light, dark, and system; fixed design tokens without custom colors                                 | Changed           | —                                         |
+| L20 | German and English UI                                                                                 | `i18n.js`, `locales/*.json`                                                                          | `src/i18n` with type-checked keys                                                                  | Present           | —                                         |
+| L21 | Map navigation: zoom to farm bounds, jump to a field                                                  | `map/FarmBoundsZoomer.jsx`, `map/FieldZoomNavigator.jsx`                                             | Fit to fields and to the selected field in `FieldsMapEditor`                                       | Present           | —                                         |
+| L22 | Farms stored in the backend (`/api/farms` CRUD)                                                       | `utils/dashboardApi.js`                                                                              | Stored in `localStorage` only                                                                      | Backend           | Farm                                      |
+| L23 | Runtime API URL through `dist/config.js`                                                              | Legacy `README.md`; not found in `src/` or `index.html` at `b0d2848`                                 | Build-time `VITE_API_BASE_URL`                                                                     | Changed           | —                                         |
+
+## Capabilities that are new in this frontend
+
+GeoJSON import and export with CRS detection, exclusion zones with net area, backup and restore of all data, undo for destructive actions, URL-shareable filters, system theme, and mobile navigation. They are not parity items but must not regress.
+
+## Decisions required
+
+- **L5 owner and contact email:** personal data. Decide whether it belongs to the farm or to Identity, and how it is protected.
+- **L9 Google satellite layer:** Google's terms do not allow direct tile URLs without an agreement. Keep it dropped unless a licensed source is decided.
+- **L19 custom theme colors:** conflicts with the token contrast guarantee. Decide whether custom colors are needed and, if so, how contrast is enforced.
+- **L23 runtime configuration:** decide whether the API URL must be changeable without a rebuild (see [ADR 0004](decisions/0004-api-contracts-and-error-handling.md)).
+- **L3, L8, L11 third-party providers:** the legacy UI called BGR, Nominatim, Bright Sky, and Open-Meteo directly from the browser. The target is to proxy them through backend Analysis adapters with timeouts, caching, and usage-policy compliance.
+
+## Verification still required
+
+For every row: an owning route or component, the backend endpoint, and a regression or acceptance test (Vitest or Playwright). Migration is not complete until every row is Present or has an accepted Changed decision, and its test passes. See the [roadmap](roadmap.md).
