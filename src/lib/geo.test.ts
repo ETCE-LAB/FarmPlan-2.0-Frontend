@@ -10,6 +10,7 @@ import {
   polygonToLatLngs,
   rectanglePolygon,
   type LatLngTuple,
+  polygonsCenterLatLng,
 } from './geo';
 
 describe('geo', () => {
@@ -83,5 +84,27 @@ describe('multi polygons and net area', () => {
     const rings = polygonToLatLngRings(withHole);
     expect(rings).toHaveLength(2);
     expect(rings[1]).toHaveLength(4);
+  });
+});
+
+describe('polygonsCenterLatLng', () => {
+  it('returns the bounding box centre in [lat, lng] order', () => {
+    const a = latLngsToPolygon([
+      [52, 10],
+      [52, 10.2],
+      [52.1, 10.2],
+    ]);
+    const b = latLngsToPolygon([
+      [52.3, 10.4],
+      [52.3, 10.5],
+      [52.4, 10.5],
+    ]);
+    const [lat, lng] = polygonsCenterLatLng([a, b])!;
+    expect(lat).toBeCloseTo(52.2);
+    expect(lng).toBeCloseTo(10.25);
+  });
+
+  it('returns null without polygons', () => {
+    expect(polygonsCenterLatLng([])).toBeNull();
   });
 });

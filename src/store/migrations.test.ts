@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { INITIAL_FARMS } from '@farm/data/mockData';
-import { migratePersistedState } from './migrations';
+import { initialPersistedState, migratePersistedState } from './migrations';
 
 const v0State = {
   farms: [
@@ -49,26 +49,35 @@ const v0State = {
 };
 
 describe('migratePersistedState', () => {
-  it('migrates v0 nested farms into normalized farms and fields', () => {
+  it('keeps v0 preferences and drops the locally stored farms', () => {
     const state = migratePersistedState(v0State, 0);
-
-    expect(state.language).toBe('en');
-    expect(state.theme).toBe('light');
-    expect(state.activeFarmId).toBe('farm-x');
-    expect(state.farms).toHaveLength(1);
-    expect(state.farms[0]).toMatchObject({ id: 'farm-x', name: 'Alter Hof', climateZone: '7a', notes: 'alt' });
-
-    const [withGeometry, withoutGeometry] = state.fields;
-    expect(withGeometry.farmId).toBe('farm-x');
-    expect(withGeometry.geometry?.coordinates[0][0]).toEqual([10.0, 52.0]); // [lng, lat]
-    expect(withGeometry.areaM2).toBeGreaterThan(0);
-    expect(withGeometry.soilPh).toBe(5.8);
-    expect(withoutGeometry.geometry).toBeNull();
-    expect(withoutGeometry.areaM2).toBe(15_000);
+    expect(state).toMatchObject({ language: 'en', theme: 'light', baseLayer: 'osm', activeFarmId: null });
+    expect(state).not.toHaveProperty('farms');
+    expect(state).not.toHaveProperty('fields');
   });
 
-  it('falls back to demo data for unrecognised state', () => {
-    expect(migratePersistedState({ nonsense: true }, 0).farms).toEqual(INITIAL_FARMS);
-    expect(migratePersistedState(null, 0).farms).toEqual(INITIAL_FARMS);
+  it('keeps v1 preferences and drops farms and fields, which now come from the backend', () => {
+    const v1State = {
+      farms: INITIAL_FARMS,
+      fields: [],
+      plans: [],
+      activeFarmId: 'farm-2',
+      language: 'en',
+      theme: 'dark',
+      baseLayer: 'topo',
+    };
+    const state = migratePersistedState(v1State, 1);
+    expect(state).toEqual({ ...initialPersistedState(), language: 'en', theme: 'dark', baseLayer: 'topo' });
+  });
+
+  it('ignores invalid preference values', () => {
+    expect(migratePersistedState({ language: 'fr', theme: 'neon', baseLayer: 'google' }, 1)).toEqual(
+      initialPersistedState(),
+    );
+  });
+
+  it('falls back to the initial state for unrecognised input', () => {
+    expect(migratePersistedState(null, 0)).toEqual(initialPersistedState());
+    expect(migratePersistedState('nonsense', 1)).toEqual(initialPersistedState());
   });
 });

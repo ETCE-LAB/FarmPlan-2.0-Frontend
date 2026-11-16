@@ -1,6 +1,6 @@
 # ADR 0004: API contracts and error handling
 
-- **Status:** Proposed
+- **Status:** Proposed; implemented for authentication and farms in `src/lib/api` (November 10, 2026)
 - **Date:** November 5, 2026
 
 ## Context
@@ -23,6 +23,6 @@ The legacy UI called its Flask backend through `utils/dashboardApi.js` without r
 
 ## Open questions
 
-- Token transport and storage (cookie versus header, refresh flow), to be decided with the backend Identity service.
+- Token transport and storage: decided in [ADR 0007](0007-session-and-server-data-sync.md) (bearer header, access token in memory, `HttpOnly` refresh cookie).
 - OpenAPI availability and whether to generate types or schemas from it.
 - Runtime versus build-time API URL for Docker Compose and Helm.

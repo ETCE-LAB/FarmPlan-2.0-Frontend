@@ -8,15 +8,18 @@ import { Card } from '@farm/components/ui/Card';
 import { Button } from '@farm/components/ui/Button';
 import { TextField } from '@farm/components/ui/FormField';
 import { FarmMetaFields } from '@farm/components/farms/FarmMetaFields';
-import { EMPTY_FARM_META, type FarmMeta } from '@farm/components/farms/farmMeta';
+import { EMPTY_FARM_META, metaToInput, type FarmMeta } from '@farm/components/farms/farmMeta';
 import { GeoJsonImportButton } from '@farm/components/farms/GeoJsonImportButton';
 import { FieldsMapEditor, type BackgroundShape, type EditorField } from '@farm/components/map/FieldsMapEditor';
 import { useFormat } from '@farm/lib/format';
 import { partsToMultiPolygon, polygonAreaM2 } from '@farm/lib/geo';
 import { createId } from '@farm/lib/utils';
+import { FIELD_ATTRIBUTE_DEFAULTS } from '@farm/lib/fields';
+import { apiErrorMessage, createFarm } from '@farm/store/farmSync';
 import { useFarmStore } from '@farm/store/useFarmStore';
+import { useSessionUser } from '@farm/store/useSessionStore';
 import { showToast } from '@farm/store/useUiStore';
-import type { Farm, Field } from '@farm/types';
+import type { Field } from '@farm/types';
 
 export default function FarmCreatePage() {
   const { t } = useTranslation();
@@ -24,10 +27,14 @@ export default function FarmCreatePage() {
   const navigate = useNavigate();
   const farms = useFarmStore((s) => s.farms);
   const existingFields = useFarmStore((s) => s.fields);
-  const addFarm = useFarmStore((s) => s.addFarm);
-  const currentUser = useFarmStore((s) => s.currentUser);
+  const user = useSessionUser();
 
-  const [meta, setMeta] = useState<FarmMeta>(EMPTY_FARM_META);
+  const [meta, setMeta] = useState<FarmMeta>(() => ({
+    ...EMPTY_FARM_META,
+    ownerName: user?.displayName ?? '',
+    contactEmail: user?.email ?? '',
+  }));
+  const [submitting, setSubmitting] = useState(false);
   const [drafts, setDrafts] = useState<EditorField[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showFieldError, setShowFieldError] = useState(false);
@@ -70,37 +77,32 @@ export default function FarmCreatePage() {
     setDrafts((prev) => prev.map((d) => (d.id === id ? { ...d, geometry } : d)));
   }, []);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (drafts.length === 0) {
       setShowFieldError(true);
       return;
     }
-    const now = new Date().toISOString();
-    const farm: Farm = {
-      id: createId('farm'),
-      ownerId: currentUser.id,
-      name: meta.name.trim(),
-      location: meta.location.trim(),
-      climateZone: meta.climateZone || null,
-      boundary: null,
-      notes: meta.notes.trim(),
-      createdAt: now,
-      updatedAt: now,
-    };
     const fields: Field[] = drafts.map((draft) => ({
       id: draft.id,
-      farmId: farm.id,
+      // Replaced by the server-assigned farm ID.
+      farmId: '',
       name: draft.name.trim() || t('farms.defaultFieldName', { index: 1 }),
       geometry: draft.geometry,
+      ...FIELD_ATTRIBUTE_DEFAULTS,
       areaM2: polygonAreaM2(draft.geometry),
-      soilType: null,
-      soilPh: null,
       excludedZones: draft.excludedZones,
     }));
-    addFarm(farm, fields);
-    showToast({ message: t('farms.created', { name: farm.name }) });
-    navigate(`/farms/${farm.id}`);
+    setSubmitting(true);
+    const result = await createFarm(metaToInput(meta), fields);
+    setSubmitting(false);
+    if (!result.ok) {
+      showToast({ tone: 'error', message: t('farms.createFailed', { reason: apiErrorMessage(result) }) });
+      return;
+    }
+    showToast({ message: t('farms.created', { name: result.data.name }) });
+    navigate(`/farms/${result.data.id}`);
   };
 
   return (
@@ -112,7 +114,7 @@ export default function FarmCreatePage() {
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <form onSubmit={handleSubmit} className="xl:col-span-4 space-y-6">
+        <form onSubmit={(e) => void handleSubmit(e)} className="xl:col-span-4 space-y-6">
           <Card title={t('farms.masterData')} icon={MapPin}>
             <FarmMetaFields value={meta} onChange={setMeta} />
           </Card>
@@ -152,8 +154,8 @@ export default function FarmCreatePage() {
             )}
           </Card>
 
-          <Button type="submit" size="md" icon={Plus} className="w-full">
-            {t('farms.create')}
+          <Button type="submit" size="md" icon={Plus} className="w-full" disabled={submitting}>
+            {submitting ? t('farms.creating') : t('farms.create')}
           </Button>
         </form>
 

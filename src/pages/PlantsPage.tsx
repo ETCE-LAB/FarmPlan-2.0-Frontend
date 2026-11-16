@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, RefreshCw, Sprout } from 'lucide-react
 import { useTranslation } from 'react-i18next';
 import { INITIAL_PLANTS } from '@farm/data/mockData';
 import { PageHeader } from '@farm/components/shared/PageHeader';
+import { HardinessZoneLegend } from '@farm/components/plants/HardinessZoneLegend';
 import { StratumBadge } from '@farm/components/plants/StratumBadge';
 import { Card } from '@farm/components/ui/Card';
 import { Button } from '@farm/components/ui/Button';
@@ -16,6 +17,7 @@ import {
   filterPlants,
   isPlantSortKey,
   sortPlants,
+  zoneRange,
   type PlantFilters,
   type PlantSortKey,
   type SortDirection,
@@ -23,15 +25,21 @@ import {
 import { useSearchParam, useUpdateSearchParams } from '@farm/lib/useSearchParam';
 import type { Language, PlantTaxon } from '@farm/types';
 
-type ColumnLabel = 'species' | 'uses' | 'stratum' | 'heightSpacing' | 'calories';
+type ColumnLabel = 'species' | 'uses' | 'stratum' | 'zones' | 'heightSpacing' | 'calories';
 
 const COLUMNS: { key: PlantSortKey | null; labelKey: ColumnLabel; className?: string }[] = [
   { key: 'name', labelKey: 'species', className: 'px-6' },
   { key: null, labelKey: 'uses' },
   { key: 'stratum', labelKey: 'stratum' },
+  { key: 'zone', labelKey: 'zones' },
   { key: 'height', labelKey: 'heightSpacing' },
   { key: 'calories', labelKey: 'calories', className: 'text-right' },
 ];
+
+const zoneText = (plant: PlantTaxon) => {
+  const range = zoneRange(plant);
+  return range ? `${range.from}–${range.to}` : '–';
+};
 
 export default function PlantsPage({ plants = INITIAL_PLANTS }: { plants?: PlantTaxon[] }) {
   const { t, i18n } = useTranslation();
@@ -97,14 +105,21 @@ export default function PlantsPage({ plants = INITIAL_PLANTS }: { plants?: Plant
               </option>
             ))}
           </SelectField>
-          <SelectField label={t('plants.filters.zone')} value={zone} onChange={(e) => setZone(e.target.value)}>
-            <option value="all">{t('plants.filters.all')}</option>
-            {zones.map((z) => (
-              <option key={z} value={z}>
-                Zone {z}
-              </option>
-            ))}
-          </SelectField>
+          <div className="relative">
+            <SelectField label={t('plants.filters.zone')} value={zone} onChange={(e) => setZone(e.target.value)}>
+              <option value="all">{t('plants.filters.all')}</option>
+              {zones.map((z) => (
+                <option key={z} value={z}>
+                  {t('plants.filters.zoneFrom', { zone: z })}
+                </option>
+              ))}
+            </SelectField>
+            {/* Sits on the label line, outside the <label>, so it stays a separate control. */}
+            <HardinessZoneLegend
+              selectedZone={zone === 'all' ? undefined : zone}
+              className="absolute right-0 -top-1.5"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -157,6 +172,7 @@ export default function PlantsPage({ plants = INITIAL_PLANTS }: { plants?: Plant
                   <td className="py-3.5 px-4">
                     <StratumBadge stratum={plant.stratum} />
                   </td>
+                  <td className="py-3.5 px-4 text-ink-soft whitespace-nowrap">{zoneText(plant)}</td>
                   <td className="py-3.5 px-4 text-ink-soft">
                     <div>{t('plants.height', { value: format.range(plant.endHeightM, 'm') })}</div>
                     <div className="text-[11px] text-ink-muted">

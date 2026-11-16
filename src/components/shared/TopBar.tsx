@@ -1,9 +1,9 @@
-import { useLocation } from 'react-router';
-import { Globe, Menu, Moon, Search, Sun, User } from 'lucide-react';
+import { Link, useLocation } from 'react-router';
+import { Globe, LogIn, LogOut, Menu, Moon, Search, Sun, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFarmStore } from '@farm/store/useFarmStore';
-import { useUiStore } from '@farm/store/useUiStore';
-import { DemoBadge } from '@farm/components/ui/Badge';
+import { signOut, useSessionStore } from '@farm/store/useSessionStore';
+import { showToast, useUiStore } from '@farm/store/useUiStore';
 import { isSearchablePath } from '@farm/config/navigation';
 import { useSearchParam } from '@farm/lib/useSearchParam';
 import { cn } from '@farm/lib/utils';
@@ -39,7 +39,7 @@ export function TopBar() {
   const { pathname } = useLocation();
   const language = useFarmStore((s) => s.language);
   const setLanguage = useFarmStore((s) => s.setLanguage);
-  const user = useFarmStore((s) => s.currentUser);
+  const user = useSessionStore((s) => s.session?.user ?? null);
   const setTheme = useFarmStore((s) => s.setTheme);
   const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const setSidebarOpen = useUiStore((s) => s.setSidebarOpen);
@@ -91,19 +91,43 @@ export function TopBar() {
         </fieldset>
 
         <div className="flex items-center gap-3 sm:pl-4 sm:border-l border-line">
-          <div className="text-right leading-tight hidden md:block">
-            <div className="text-sm font-semibold text-ink flex items-center gap-2 justify-end">
-              {user.username}
-              <DemoBadge />
-            </div>
-            <div className="text-xs text-ink-muted">{t(`topBar.roles.${user.role}`)}</div>
-          </div>
-          <div
-            className="w-9 h-9 rounded-full bg-brand-50 border border-line flex items-center justify-center text-brand-fg"
-            title={user.username}
-          >
-            <User size={18} aria-hidden />
-          </div>
+          {user ? (
+            <>
+              <Link
+                to="/account"
+                title={t('account.link')}
+                className="flex items-center gap-3 rounded-full hover:bg-surface-sunken transition focus-visible:outline-2 focus-visible:outline-brand-700"
+              >
+                <span className="text-right leading-tight hidden md:block">
+                  <span className="block text-sm font-semibold text-ink">{user.displayName}</span>
+                  <span className="block text-xs text-ink-muted">{t(`auth.accountTypes.${user.accountType}`)}</span>
+                </span>
+                <span className="w-9 h-9 rounded-full bg-brand-50 border border-line flex items-center justify-center text-brand-fg">
+                  <User size={18} aria-hidden />
+                  <span className="sr-only md:hidden">{t('account.link')}</span>
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  void signOut().then(() => showToast({ message: t('auth.loggedOut'), tone: 'info' }));
+                }}
+                aria-label={t('auth.logout')}
+                title={t('auth.logout')}
+                className="p-2 rounded-full text-ink-muted hover:text-ink hover:bg-surface-sunken transition cursor-pointer focus-visible:outline-2 focus-visible:outline-brand-700"
+              >
+                <LogOut size={16} aria-hidden />
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-fg hover:underline"
+            >
+              <LogIn size={16} aria-hidden />
+              {t('topBar.login')}
+            </Link>
+          )}
         </div>
       </div>
     </header>

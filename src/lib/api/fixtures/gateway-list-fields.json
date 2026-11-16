@@ -1,0 +1,48 @@
+{
+  "items": [
+    {
+      "name": "Kiefernkämpe",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [10.0, 52.0],
+            [10.001, 52.0],
+            [10.001, 52.001],
+            [10.0, 52.001],
+            [10.0, 52.0]
+          ]
+        ]
+      },
+      "excludedZones": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [10.0004, 52.0004],
+              [10.0006, 52.0004],
+              [10.0006, 52.0006],
+              [10.0004, 52.0006],
+              [10.0004, 52.0004]
+            ]
+          ]
+        ]
+      },
+      "soilType": "Sand",
+      "soilPh": 5.5,
+      "cropType": null,
+      "irrigation": "none",
+      "autoSpacing": false,
+      "id": "9d4c8f8e-1b2a-4c3d-8e9f-0a1b2c3d4e5f",
+      "farmId": "5f0f6c55-8a39-4d55-9a3c-3d2b0e7f1a11",
+      "areaM2": 7655.4,
+      "netAreaM2": 7349.1,
+      "perimeterM": 350.2,
+      "createdAt": "2026-11-10T09:10:00+00:00",
+      "updatedAt": "2026-11-10T09:10:00+00:00"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pageSize": 100
+}

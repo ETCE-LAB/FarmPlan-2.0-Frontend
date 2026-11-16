@@ -72,3 +72,35 @@ export function SelectField({
     </FieldShell>
   );
 }
+
+/** Checkbox with its label to the right; the whole row is clickable. */
+export function CheckboxField({
+  label,
+  hint,
+  className,
+  ...input
+}: Shared & Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+  const id = useId();
+  const hintId = useId();
+  return (
+    <div className={className}>
+      <div className="flex items-center gap-2">
+        <input
+          id={id}
+          type="checkbox"
+          aria-describedby={hint ? hintId : undefined}
+          {...input}
+          className="h-4 w-4 accent-brand-700 cursor-pointer"
+        />
+        <label htmlFor={id} className="text-xs text-ink-soft font-semibold cursor-pointer">
+          {label}
+        </label>
+      </div>
+      {hint && (
+        <p id={hintId} className="mt-1 text-[11px] text-ink-muted">
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}

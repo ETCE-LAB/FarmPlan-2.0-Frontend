@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { Link, NavLink } from 'react-router';
-import { Sprout, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NAV_ITEMS, type NavItem } from '@farm/config/navigation';
+import { isModuleAccessible, useSessionStore } from '@farm/store/useSessionStore';
 import { useUiStore } from '@farm/store/useUiStore';
 import { cn } from '@farm/lib/utils';
 
@@ -11,6 +12,8 @@ export function Sidebar() {
   const open = useUiStore((s) => s.sidebarOpen);
   const setOpen = useUiStore((s) => s.setSidebarOpen);
   const close = () => setOpen(false);
+  const modules = useSessionStore((s) => s.modules);
+  const visible = (item: NavItem) => isModuleAccessible(modules, item.module);
 
   useEffect(() => {
     if (!open) return;
@@ -56,7 +59,8 @@ export function Sidebar() {
         <div className="flex items-start justify-between bg-black/10 border-b border-white/10">
           <Link to="/" onClick={close} className="p-6 block flex-1 hover:bg-black/5 transition">
             <span className="text-2xl font-bold flex items-center gap-2.5 text-white tracking-tight">
-              <Sprout size={26} className="text-emerald-300" aria-hidden />
+              {/* Decorative: the link text "FarmPlan" already names the target. */}
+              <img src="/icon.png" alt="" width={64} height={64} className="shrink-0 rounded-full" />
               FarmPlan
             </span>
             <span className="mt-1.5 flex items-center gap-2">
@@ -77,10 +81,10 @@ export function Sidebar() {
         </div>
 
         <nav aria-label={t('nav.main')} className="py-4 flex-1 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.filter((i) => i.group === 'main').map(renderItem)}
+          {NAV_ITEMS.filter((i) => i.group === 'main' && visible(i)).map(renderItem)}
         </nav>
         <nav aria-label={t('nav.secondary')} className="py-4 border-t border-white/10">
-          {NAV_ITEMS.filter((i) => i.group === 'bottom').map(renderItem)}
+          {NAV_ITEMS.filter((i) => i.group === 'bottom' && visible(i)).map(renderItem)}
         </nav>
       </aside>
     </>

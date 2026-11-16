@@ -1,0 +1,57 @@
+{
+  "items": [
+    {
+      "name": "Gutshof Neorx",
+      "location": "Lüneburger Heide",
+      "climateZone": "7b",
+      "boundary": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [9.999, 51.999],
+            [10.004, 51.999],
+            [10.004, 52.002],
+            [9.999, 52.002],
+            [9.999, 51.999]
+          ]
+        ]
+      },
+      "notes": "",
+      "contact": {
+        "ownerName": "Demo-Betrieb",
+        "email": "demo@farmplan.local"
+      },
+      "id": "5f0f6c55-8a39-4d55-9a3c-3d2b0e7f1a11",
+      "createdAt": "2026-11-10T09:00:00+00:00",
+      "updatedAt": "2026-11-10T09:30:00+00:00",
+      "boundaryAreaM2": 125400.5,
+      "boundaryPerimeterM": 1450.2,
+      "summary": {
+        "fieldCount": 1,
+        "fieldAreaM2": 9960.2,
+        "activePlanCount": null
+      }
+    },
+    {
+      "name": "Ohne Kontakt",
+      "location": "",
+      "climateZone": "",
+      "boundary": null,
+      "notes": "",
+      "contact": null,
+      "id": "0b7e7d1e-2c1e-4c55-8f31-6a0f4b1d2e22",
+      "createdAt": "2026-11-09T09:00:00+00:00",
+      "updatedAt": "2026-11-09T09:00:00+00:00",
+      "boundaryAreaM2": null,
+      "boundaryPerimeterM": null,
+      "summary": {
+        "fieldCount": 0,
+        "fieldAreaM2": 0.0,
+        "activePlanCount": null
+      }
+    }
+  ],
+  "total": 2,
+  "page": 1,
+  "pageSize": 100
+}

@@ -1,6 +1,6 @@
 # ADR 0003: Client state and data fetching
 
-- **Status:** Proposed (current state accepted; backend data fetching proposed)
+- **Status:** Proposed (current state accepted; backend data fetching proposed). Farms and fields: superseded in part by [ADR 0007](0007-session-and-server-data-sync.md).
 - **Date:** November 5, 2026
 
 ## Context
