@@ -1,18 +1,20 @@
 import { z } from 'zod';
-import { STORE_VERSION, type PersistedFarmState } from '@farm/store/migrations';
-
-const position = z.array(z.number()).min(2);
-const ring = z.array(position).min(4);
-const polygon = z.object({ type: z.literal('Polygon'), coordinates: z.array(ring).min(1) });
-const multiPolygon = z.object({ type: z.literal('MultiPolygon'), coordinates: z.array(z.array(ring).min(1)) });
+import { multiPolygonSchema as multiPolygon, polygonSchema as polygon } from '@farm/lib/schemas';
+import { STORE_VERSION } from '@farm/store/migrations';
+import type { Farm, Field, PlantingPlan } from '@farm/types';
 
 const farmSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
   name: z.string(),
+  // Added in version 2; older backups have no owner or contact data.
+  ownerName: z.string().default(''),
+  contactEmail: z.string().default(''),
   location: z.string(),
   climateZone: z.string().nullable(),
   boundary: polygon.nullable(),
+  boundaryAreaM2: z.number().nonnegative().nullable().default(null),
+  boundaryPerimeterM: z.number().nonnegative().nullable().default(null),
   notes: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -27,6 +29,10 @@ const fieldSchema = z.object({
   soilType: z.string().nullable(),
   soilPh: z.number().min(0).max(14).nullable(),
   excludedZones: multiPolygon.nullable(),
+  // Added after backup version 1; older backups get the server defaults.
+  cropType: z.string().nullable().default(null),
+  irrigation: z.enum(['none', 'drip', 'sprinkler', 'flood', 'other']).default('none'),
+  autoSpacing: z.boolean().default(false),
 });
 
 const planSchema = z.object({
@@ -51,7 +57,12 @@ const backupSchema = z.object({
   }),
 });
 
-export type BackupData = Pick<PersistedFarmState, 'farms' | 'fields' | 'plans' | 'activeFarmId'>;
+export interface BackupData {
+  farms: Farm[];
+  fields: Field[];
+  plans: PlantingPlan[];
+  activeFarmId: string | null;
+}
 export type BackupFile = z.infer<typeof backupSchema>;
 
 export type BackupParseResult =

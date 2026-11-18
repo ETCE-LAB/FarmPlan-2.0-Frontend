@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/icon.png" alt="FarmPlan logo" width="140" height="140" />
+</p>
+
 # FarmPlan 2.0 – Frontend
 
 Web app for planning agroforestry farms: map fields, plan treelines and browse the plant catalog.
@@ -25,36 +29,40 @@ npm run dev          # http://localhost:3000, /api is proxied to http://localhos
 
 ## Status
 
-There is no backend yet. Farms, fields and planting plans live in `localStorage` (`farmplan-storage`);
-placeholder values are marked as **demo data** in the UI.
+The app talks to the FarmPlan backend gateway (`/api/v1`). Sign-in, guest sessions, account management,
+farms, fields, and farm boundaries are stored on the server; see [ADR 0007](docs/decisions/0007-session-and-server-data-sync.md).
+The plant catalog, planting plans, and parts of the overview still use demo data, marked as **demo data** in the UI.
 
 The app is being migrated from the previous FarmPlan V2 prototype in small steps.
 Already available:
 
 - App shell with sidebar, top bar, global search, light/dark/system theme and German/English
+- Login, registration, guest access, account page; navigation follows the modules enabled for the account
 - Overview dashboard: key figures, field inventory, soil lookup and yield chart
 - Undo for destructive actions, confirm dialog, toasts, error boundary
-- Plant catalog with filters and sorting in the URL, plant details
-- Farm list, farm creation and farm details with map editor (draw fields, GeoJSON import/export) and treeline preview
+- Plant catalog with filters and sorting in the URL, hardiness zone legend, plant details
+- Farm list, farm creation and farm details with map editor (draw fields and farm boundary, GeoJSON import/export) and treeline preview
 - Settings with backup and restore
+
+For local development, start the backend Compose stack; `npm run dev` proxies `/api` to it.
 
 Coming next: end-to-end tests with Playwright.
 
 ## Project Structure
 
-| Path                    | Contents                                                                              |
-| ----------------------- | ------------------------------------------------------------------------------------- |
-| `src/pages`             | One file per route                                                                    |
-| `src/components/ui`     | Building blocks: `Card`, `Button`/`buttonClass`, form fields, `Badge`                 |
-| `src/components/shared` | App frame: Sidebar, TopBar, PageHeader, ErrorBoundary, dialog, toasts                 |
-| `src/components/*`      | Feature components, grouped by page (e.g. `overview`)                                 |
-| `src/config`            | Navigation entries                                                                    |
-| `src/lib`               | Pure logic: geometry, agronomy, formatting, URL state                                 |
-| `src/store`             | `useFarmStore` (persisted, versioned migrations), `useUiStore` (toasts, dialog, menu) |
-| `src/types`             | Domain types; geometries are GeoJSON                                                  |
-| `src/i18n`              | Translations; `en.ts` is type-checked against `de.ts`                                 |
-| `src/data/mockData.ts`  | Demo data shaped like the future API                                                  |
-| `src/test`              | Vitest setup and test helpers                                                         |
+| Path                    | Contents                                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `src/pages`             | One file per route                                                                                 |
+| `src/components/ui`     | Building blocks: `Card`, `Button`/`buttonClass`, form fields, `Badge`                              |
+| `src/components/shared` | App frame: Sidebar, TopBar, PageHeader, ErrorBoundary, dialog, toasts                              |
+| `src/components/*`      | Feature components, grouped by page (e.g. `overview`)                                              |
+| `src/config`            | Navigation entries                                                                                 |
+| `src/lib`               | Pure logic: geometry, agronomy, formatting, URL state                                              |
+| `src/store`             | `useFarmStore`, `useSessionStore`, `farmSync` (server writes), `useUiStore` (toasts, dialog, menu) |
+| `src/types`             | Domain types; geometries are GeoJSON                                                               |
+| `src/i18n`              | Translations; `en.ts` is type-checked against `de.ts`                                              |
+| `src/data/mockData.ts`  | Demo data for parts not yet on the server                                                          |
+| `src/test`              | Vitest setup and test helpers                                                                      |
 
 Imports use the `@farm/*` alias for `src/*`.
 

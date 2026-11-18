@@ -45,6 +45,9 @@ export function exportFarmGeoJson(farm: Farm, fields: Field[]): FeatureCollectio
         netAreaM2: Math.round(netAreaM2(field.geometry, field.excludedZones)),
         soilType: field.soilType,
         soilPh: field.soilPh,
+        cropType: field.cropType,
+        irrigation: field.irrigation,
+        autoSpacing: field.autoSpacing,
       },
     });
     multiPolygonParts(field.excludedZones).forEach((zone, index) =>

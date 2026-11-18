@@ -10,6 +10,11 @@ Priorities with acceptance criteria. The roadmap describes order, not a request 
 - German and English UI with type-checked keys.
 - Overview, plant catalog, farm list, farm creation and details with map editor, GeoJSON import/export, treeline preview, settings with backup and restore. All on demo data in `localStorage`.
 - Docker image serving the build with nginx.
+- API client with timeouts, typed errors, and zod-validated responses (`src/lib/api`).
+- Login, registration, logout, session refresh through the `HttpOnly` cookie, protected farm routes; access token in memory only ([ADR 0007](decisions/0007-session-and-server-data-sync.md)).
+- Farms through `/api/v1/farms` and fields as their own resource instead of `localStorage`; existing local data can be imported from a backup (parity L5, L22).
+- Farm boundary drawing with server-computed area and perimeter (L6, L7); crop type, irrigation, and automatic spacing per field (L10); GeoJSON imports as one atomic request.
+- Account page with display name, password change, and account deletion; guest sessions; navigation follows `/api/v1/modules`.
 
 ## P0 – Foundation and authentication
 
@@ -19,19 +24,14 @@ Priorities with acceptance criteria. The roadmap describes order, not a request 
 | CI                      | Every PR into `dev` and `main` runs `npm run check`, `npm run build`, and Playwright; failures block merging                                                                  |
 | Branch protection       | `dev` and `main` reject direct and force pushes; PR base rules match [CONTRIBUTING.md](../CONTRIBUTING.md)                                                                    |
 | Docker Compose and Helm | The frontend image runs in the shared Compose setup and the Helm chart, with the API URL configured                                                                           |
-| API client              | One client module with base URL, timeouts, typed errors, and zod-validated responses ([ADR 0004](decisions/0004-api-contracts-and-error-handling.md))                         |
-| Login and session       | Login, logout, session refresh, and protected routes against the backend Identity service; token storage decided in an ADR                                                    |
 
 ## P1 – Backend data and GIS editor
 
-| Item                          | Acceptance criteria                                                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Farms and fields from the API | CRUD through the API replaces `localStorage` for domain data; migration path for existing local data decided (parity L22) |
-| Plant catalog from the API    | Server-side search, filters, and pagination; full catalog instead of 8 demo species (L2, L16)                             |
-| Farm boundary and perimeter   | Farm border can be drawn and edited; perimeter shown (L6, L7)                                                             |
-| Location search               | Search by coordinates or address through a backend geocoding adapter (L8)                                                 |
-| Field properties              | Crop type, irrigation, and other legacy field attributes (L10)                                                            |
-| Plant images                  | Images from the backend Media service with attribution (L17)                                                              |
+| Item                       | Acceptance criteria                                                                           |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| Plant catalog from the API | Server-side search, filters, and pagination; full catalog instead of 8 demo species (L2, L16) |
+| Location search            | Search by coordinates or address through a backend geocoding adapter (L8)                     |
+| Plant images               | Images from the backend Media service with attribution (L17)                                  |
 
 ## P2 – Planning and analysis
 

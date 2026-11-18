@@ -19,7 +19,9 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
-        changeOrigin: true,
+        // Keep the browser's Host header: the gateway's auth routes require Origin to match the
+        // request authority (CSRF check), which only holds if the proxy does not rewrite Host.
+        changeOrigin: false,
       },
     },
   },

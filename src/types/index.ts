@@ -27,13 +27,20 @@ export interface Farm {
   id: string;
   ownerId: string;
   name: string;
+  ownerName: string;
+  contactEmail: string;
   location: string;
   climateZone: string | null;
   boundary: Polygon | null;
+  /** Server-computed (WGS84) area and perimeter of the boundary; null without boundary or while saving. */
+  boundaryAreaM2: number | null;
+  boundaryPerimeterM: number | null;
   notes: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export type Irrigation = 'none' | 'drip' | 'sprinkler' | 'flood' | 'other';
 
 export interface Field {
   id: string;
@@ -44,6 +51,10 @@ export interface Field {
   soilType: string | null;
   soilPh: number | null;
   excludedZones: MultiPolygon | null;
+  cropType: string | null;
+  irrigation: Irrigation;
+  /** Let planning choose plant spacing automatically (legacy "auto spacing" toggle). */
+  autoSpacing: boolean;
 }
 
 export type PlanStatus = 'draft' | 'active';

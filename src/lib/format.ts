@@ -13,6 +13,7 @@ export function createFormatters(locale: string) {
       min === max ? `${number(min)} ${unit}` : `${number(min)}–${number(max)} ${unit}`,
     hectares: (m2: number, digits = 2) => `${number(m2ToHa(m2), digits)} ha`,
     squareMetres: (m2: number) => `${number(m2, 0)} m²`,
+    metres: (m: number) => (m >= 1000 ? `${number(m / 1000, 2)} km` : `${number(m, 0)} m`),
     celsius: (value: number) => `${number(value)} °C`,
   };
 }

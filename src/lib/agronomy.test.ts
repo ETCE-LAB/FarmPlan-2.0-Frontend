@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyPh, hardinessZoneRangeC, zoneSpan } from './agronomy';
+import { classifyPh, hardinessZoneColor, hardinessZoneRangeC, zoneSpan } from './agronomy';
 
 describe('hardinessZoneRangeC', () => {
   it.each([
@@ -36,5 +36,18 @@ describe('classifyPh', () => {
     [7.8, 'alkaline'],
   ])('pH %d is %s', (ph, expected) => {
     expect(classifyPh(ph)).toBe(expected);
+  });
+});
+
+describe('hardinessZoneColor', () => {
+  it('runs from violet-blue for the coldest to red for the warmest zone', () => {
+    expect(hardinessZoneColor('1a')).toBe('hsl(260 70% 48%)');
+    expect(hardinessZoneColor('13b')).toBe('hsl(0 70% 48%)');
+  });
+
+  it('gives every zone its own colour and rejects unknown zones', () => {
+    const colors = ['6a', '6b', '7a', '7b'].map(hardinessZoneColor);
+    expect(new Set(colors).size).toBe(4);
+    expect(hardinessZoneColor('14a')).toBeNull();
   });
 });

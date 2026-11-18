@@ -7,7 +7,7 @@ description: Connect the FarmPlan frontend to the backend gateway with zod-valid
 
 ## Status
 
-There is no backend integration yet. Data comes from `src/data/mockData.ts` and is persisted in `localStorage`. zod is currently used for backup imports in `src/lib/backup.ts`. The client design is described in [ADR 0003](../../../docs/decisions/0003-client-state-and-data-fetching.md) and [ADR 0004](../../../docs/decisions/0004-api-contracts-and-error-handling.md); treat their open points as open.
+Authentication, farms, and fields are connected through `src/lib/api` (client, `auth.ts`, `farms.ts`) and `src/store/farmSync.ts`, against backend `990a964`; recorded list fixtures in `src/lib/api/fixtures` were validated against the gateway's pydantic models, so re-validate them when the backend contract changes; see [ADR 0007](../../../docs/decisions/0007-session-and-server-data-sync.md). Plans, catalog, and analysis still use `src/data/mockData.ts`. Tests run against the in-memory gateway in `src/test/fakeGateway.ts`; keep it in line with the real gateway. The client design is described in [ADR 0003](../../../docs/decisions/0003-client-state-and-data-fetching.md) and [ADR 0004](../../../docs/decisions/0004-api-contracts-and-error-handling.md); treat their open points as open.
 
 ## Preparation
 

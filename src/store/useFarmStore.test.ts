@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { useFarmStore } from './useFarmStore';
-import { mutateWithUndo } from './undo';
-import { useUiStore } from './useUiStore';
 import { polygonAreaM2, rectanglePolygon } from '@farm/lib/geo';
 import type { Field } from '@farm/types';
 
@@ -18,6 +16,9 @@ const newField = (id: string, farmId = 'farm-2'): Field => {
     soilType: null,
     soilPh: null,
     excludedZones: null,
+    cropType: null,
+    irrigation: 'none',
+    autoSpacing: false,
   };
 };
 
@@ -84,41 +85,27 @@ describe('useFarmStore', () => {
     expect(store().snapshot()).toEqual(snapshot);
   });
 
-  it('keeps preferences when resetting the data', () => {
+  it('keeps preferences and server data when resetting local data', () => {
     store().setLanguage('en');
     store().setTheme('dark');
     store().setBaseLayer('satellite');
-    store().deleteFarm('farm-1');
+    store().deleteField('f-101');
     store().resetData();
     expect(store()).toMatchObject({ language: 'en', theme: 'dark', baseLayer: 'satellite' });
+    expect(store().plans.some((p) => p.fieldId === 'f-101')).toBe(true);
     expect(store().farms).toHaveLength(2);
   });
 
-  it('persists data and preferences, but not transient state', () => {
+  it('clears server data on logout', () => {
+    store().clearServerData();
+    expect(store()).toMatchObject({ farms: [], fields: [], farmsStatus: 'idle', farmsError: null });
+  });
+
+  it('persists preferences and demo plans, but never server data', () => {
     store().setBaseLayer('topo');
     const persisted = JSON.parse(localStorage.getItem('farmplan-storage')!);
-    expect(Object.keys(persisted.state).sort()).toEqual([
-      'activeFarmId',
-      'baseLayer',
-      'farms',
-      'fields',
-      'language',
-      'plans',
-      'theme',
-    ]);
+    expect(Object.keys(persisted.state).sort()).toEqual(['activeFarmId', 'baseLayer', 'language', 'plans', 'theme']);
     expect(persisted.state.baseLayer).toBe('topo');
-    expect(persisted.version).toBe(1);
-  });
-});
-
-describe('mutateWithUndo', () => {
-  it('shows a toast whose action restores the previous data', () => {
-    mutateWithUndo(() => store().deleteFarm('farm-1'), 'gelöscht', 'Rückgängig');
-    expect(store().farms).toHaveLength(1);
-
-    const [toast] = useUiStore.getState().toasts;
-    expect(toast).toMatchObject({ message: 'gelöscht', action: { label: 'Rückgängig' } });
-    toast.action!.onClick();
-    expect(store().farms).toHaveLength(2);
+    expect(persisted.version).toBe(2);
   });
 });
