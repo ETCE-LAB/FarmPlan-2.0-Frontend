@@ -40,11 +40,20 @@ On November 16, 2026, on branch `feat/implementBackend`: `npm run check` passed 
 ## Docker
 
 ```sh
-docker build -t farmplan-frontend --build-arg VITE_API_BASE_URL=https://api.example.com .
-docker run -p 8080:80 farmplan-frontend
+docker build -t farmplan-frontend .
+docker run -p 8080:80 -e API_UPSTREAM=http://api-gateway:8000 farmplan-frontend
 ```
 
-`VITE_API_BASE_URL` is read at build time and is public in the bundle.
+- `VITE_API_BASE_URL` is a build argument, defaults to `/api`, and is public in the bundle. Leave it at `/api` when nginx proxies the API.
+- `API_UPSTREAM` (runtime, `http(s)://host[:port]` without a path) makes nginx proxy `/api/` to the gateway; `docker/40-api-proxy.sh` writes that location at container start and keeps the browser's `Host` header for the gateway's Origin check. Without it, `/api/` answers 503 instead of falling through to `index.html`. An invalid value stops the container.
+
+## Full stack with Docker Compose
+
+The umbrella repository [ETCE-LAB/FarmPlan-2.0](https://github.com/ETCE-LAB/FarmPlan-2.0) holds frontend, backend, documentation, and ML as submodules, and its `docker-compose.yml` includes `FarmPlan-2.0-Backend/infra/compose.yaml` and adds a `frontend` service. To use this image there, build it from `FarmPlan-2.0-Frontend` and set `API_UPSTREAM=http://api-gateway:8000`. As of November 19, 2026 the umbrella repository still builds its own `deployment/frontend.Dockerfile`, whose proxy sends `Host $host`; `$host` drops the port, so sign-in fails with 403 on any port other than 80.
+
+Verified on November 18, 2026 with a Compose file that includes the backend Compose file (backend `develop`) and builds this image with `API_UPSTREAM`: all services became healthy; register, login, the refresh cookie, and `GET /api/v1/farms` worked through nginx; a foreign Origin got 403; a headless Chromium signed in through the UI and stayed signed in after a reload.
+
+Over plain HTTP the stack only works on `localhost`, because the gateway sets the refresh cookie `Secure` only when `APP_ENV=production`; a TLS-terminating proxy in front must forward the original `Host` and scheme, or the Origin check rejects sign-in.
 
 ## Known gaps
 
