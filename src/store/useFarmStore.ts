@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { DEMO_USER } from '@farm/data/mockData';
+import type { ApiErrorCode } from '@farm/lib/api/client';
 import { polygonAreaM2 } from '@farm/lib/geo';
-import type { BaseLayerId, Farm, Field, Language, ThemePreference, User } from '@farm/types';
+import type { BaseLayerId, Farm, Field, Language, PlantingPlan, ThemePreference } from '@farm/types';
 import {
   STORE_VERSION,
   initialPersistedState,
@@ -10,29 +10,63 @@ import {
   type PersistedFarmState,
 } from '@farm/store/migrations';
 
-type FarmPatch = Partial<Pick<Farm, 'name' | 'location' | 'climateZone' | 'notes' | 'boundary'>>;
-type FieldPatch = Partial<Pick<Field, 'name' | 'soilType' | 'soilPh' | 'geometry' | 'excludedZones'>>;
+export type FarmPatch = Partial<
+  Pick<
+    Farm,
+    | 'name'
+    | 'ownerName'
+    | 'contactEmail'
+    | 'location'
+    | 'climateZone'
+    | 'notes'
+    | 'boundary'
+    | 'boundaryAreaM2'
+    | 'boundaryPerimeterM'
+  >
+>;
+export type FieldPatch = Partial<
+  Pick<Field, 'name' | 'soilType' | 'soilPh' | 'geometry' | 'excludedZones' | 'cropType' | 'irrigation' | 'autoSpacing'>
+>;
 
-export type DataSnapshot = Pick<PersistedFarmState, 'farms' | 'fields' | 'plans' | 'activeFarmId'>;
+export interface DataSnapshot {
+  farms: Farm[];
+  fields: Field[];
+  plans: PlantingPlan[];
+  activeFarmId: string | null;
+}
+
+/** Loading state of the server data (farms and fields). */
+export type FarmsStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 interface FarmStoreState extends PersistedFarmState {
-  currentUser: User;
+  /** Server data from `/api/v1/farms`; not persisted. Mutations go through `src/store/farmSync.ts`. */
+  farms: Farm[];
+  fields: Field[];
+  farmsStatus: FarmsStatus;
+  farmsError: ApiErrorCode | null;
+
+  setFarmsLoading: () => void;
+  setFarmsError: (error: ApiErrorCode) => void;
+  setServerData: (farms: Farm[], fields: Field[]) => void;
+  clearServerData: () => void;
 
   addFarm: (farm: Farm, fields: Field[]) => void;
   updateFarm: (id: string, patch: FarmPatch) => void;
-
   deleteFarm: (id: string) => void;
   addFields: (fields: Field[]) => void;
-
   updateField: (id: string, patch: FieldPatch) => void;
-
   deleteField: (id: string) => void;
+  replaceFarmFields: (farmId: string, fields: Field[]) => void;
+  /** Swaps a temporary field ID for the server's, including plan references. */
+  renameField: (oldId: string, newId: string, patch?: Partial<Pick<Field, 'areaM2'>>) => void;
+
   snapshot: () => DataSnapshot;
   restore: (snapshot: DataSnapshot) => void;
   setActiveFarmId: (id: string | null) => void;
   setLanguage: (language: Language) => void;
   setTheme: (theme: ThemePreference) => void;
   setBaseLayer: (baseLayer: BaseLayerId) => void;
+  /** Resets locally persisted data (demo plans, active farm) and keeps device settings. */
   resetData: () => void;
 }
 
@@ -43,7 +77,15 @@ export const useFarmStore = create<FarmStoreState>()(
   persist(
     (set, get) => ({
       ...initialPersistedState(),
-      currentUser: DEMO_USER,
+      farms: [],
+      fields: [],
+      farmsStatus: 'idle',
+      farmsError: null,
+
+      setFarmsLoading: () => set({ farmsStatus: 'loading', farmsError: null }),
+      setFarmsError: (farmsError) => set({ farmsStatus: 'error', farmsError }),
+      setServerData: (farms, fields) => set({ farms, fields, farmsStatus: 'ready', farmsError: null }),
+      clearServerData: () => set({ farms: [], fields: [], farmsStatus: 'idle', farmsError: null }),
 
       addFarm: (farm, fields) =>
         set((state) => ({
@@ -98,6 +140,15 @@ export const useFarmStore = create<FarmStoreState>()(
           };
         }),
 
+      replaceFarmFields: (farmId, fields) =>
+        set((state) => ({ fields: [...state.fields.filter((f) => f.farmId !== farmId), ...fields] })),
+
+      renameField: (oldId, newId, patch) =>
+        set((state) => ({
+          fields: state.fields.map((f) => (f.id === oldId ? { ...f, ...patch, id: newId } : f)),
+          plans: state.plans.map((p) => (p.fieldId === oldId ? { ...p, fieldId: newId } : p)),
+        })),
+
       snapshot: () => {
         const { farms, fields, plans, activeFarmId } = get();
         return { farms, fields, plans, activeFarmId };
@@ -119,8 +170,6 @@ export const useFarmStore = create<FarmStoreState>()(
       storage: createJSONStorage(() => localStorage),
       migrate: migratePersistedState,
       partialize: (state): PersistedFarmState => ({
-        farms: state.farms,
-        fields: state.fields,
         plans: state.plans,
         activeFarmId: state.activeFarmId,
         language: state.language,
@@ -130,5 +179,6 @@ export const useFarmStore = create<FarmStoreState>()(
     },
   ),
 );
+
 export const useActiveFarm = () =>
   useFarmStore((s) => s.farms.find((f) => f.id === s.activeFarmId) ?? s.farms[0] ?? null);

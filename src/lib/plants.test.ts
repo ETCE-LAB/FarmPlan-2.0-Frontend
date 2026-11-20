@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { INITIAL_PLANTS } from '@farm/data/mockData';
-import { filterPlants, isPlantSortKey, sortPlants, type PlantFilters } from './plants';
+import { zoneSpan } from './agronomy';
+import { filterPlants, isPlantSortKey, sortPlants, zoneRange, type PlantFilters } from './plants';
 
 const all: PlantFilters = { query: '', use: 'all', stratum: 'all', zone: 'all' };
 const ids = (plants: { id: string }[]) => plants.map((p) => p.id);
@@ -19,11 +20,38 @@ describe('filterPlants', () => {
   });
 
   it('combines use, stratum and zone filters', () => {
-    expect(ids(filterPlants(INITIAL_PLANTS, { ...all, use: 'berry', stratum: 'LOW', zone: '3a' }))).toEqual(['p-8']);
+    expect(ids(filterPlants(INITIAL_PLANTS, { ...all, use: 'nut', stratum: 'EMERGENT', zone: '8b' }))).toEqual(['p-1']);
+  });
+});
+
+describe('zone filter', () => {
+  const plant = (id: string, from: string, to: string) => ({
+    ...INITIAL_PLANTS[0],
+    id,
+    hardinessZones: zoneSpan(from, to),
+  });
+  const plants = [
+    plant('cold', '3a', '6b'),
+    plant('mild', '5a', '7a'),
+    plant('warm', '7b', '10a'),
+    plant('hot', '9a', '11b'),
+  ];
+
+  it('includes plants listed for the selected zone or any warmer one', () => {
+    expect(ids(filterPlants(plants, { ...all, zone: '7a' }))).toEqual(['mild', 'warm', 'hot']);
+    expect(ids(filterPlants(plants, { ...all, zone: '7b' }))).toEqual(['warm', 'hot']);
+    expect(ids(filterPlants(plants, { ...all, zone: '3a' }))).toEqual(['cold', 'mild', 'warm', 'hot']);
+    expect(ids(filterPlants(plants, { ...all, zone: '12a' }))).toEqual([]);
   });
 
-  it('filters by hardiness zone', () => {
-    expect(ids(filterPlants(INITIAL_PLANTS, { ...all, zone: '3a' })).sort()).toEqual(['p-5', 'p-8']);
+  it('ignores unknown zone values from the URL', () => {
+    expect(filterPlants(plants, { ...all, zone: '99z' })).toHaveLength(4);
+  });
+
+  it('describes the zone range and sorts by the coldest zone', () => {
+    expect(zoneRange(plants[2])).toEqual({ from: '7b', to: '10a' });
+    expect(zoneRange({ ...plants[0], hardinessZones: [] })).toBeNull();
+    expect(ids(sortPlants([...plants].reverse(), 'zone', 'asc', 'de'))).toEqual(['cold', 'mild', 'warm', 'hot']);
   });
 });
 

@@ -4,10 +4,12 @@ import { ChevronRight, Plus, Tractor } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@farm/components/shared/PageHeader';
 import { Card } from '@farm/components/ui/Card';
+import { Button } from '@farm/components/ui/Button';
 import { Badge } from '@farm/components/ui/Badge';
 import { buttonClass } from '@farm/components/ui/buttonClass';
 import { useFormat } from '@farm/lib/format';
 import { useSearchParam } from '@farm/lib/useSearchParam';
+import { apiErrorMessage, loadFarms } from '@farm/store/farmSync';
 import { useFarmStore } from '@farm/store/useFarmStore';
 
 export default function FarmListPage() {
@@ -15,6 +17,8 @@ export default function FarmListPage() {
   const format = useFormat();
   const farms = useFarmStore((s) => s.farms);
   const fields = useFarmStore((s) => s.fields);
+  const status = useFarmStore((s) => s.farmsStatus);
+  const error = useFarmStore((s) => s.farmsError);
   const [query] = useSearchParam('q');
 
   const rows = useMemo(() => {
@@ -40,7 +44,20 @@ export default function FarmListPage() {
         }
       />
 
-      {rows.length === 0 ? (
+      {status === 'error' && error ? (
+        <Card>
+          <div role="alert" className="py-6 text-center space-y-3">
+            <p className="text-sm text-danger-fg">{t('api.loadFailed', { reason: apiErrorMessage(error) })}</p>
+            <Button variant="secondary" onClick={() => void loadFarms()}>
+              {t('api.retry')}
+            </Button>
+          </div>
+        </Card>
+      ) : status !== 'ready' && farms.length === 0 ? (
+        <Card>
+          <output className="block py-10 text-center text-sm text-ink-muted">{t('api.loading')}</output>
+        </Card>
+      ) : rows.length === 0 ? (
         <Card>
           <p className="py-10 text-center text-sm text-ink-muted">
             {query ? t('farms.noSearchResults') : t('farms.empty')}

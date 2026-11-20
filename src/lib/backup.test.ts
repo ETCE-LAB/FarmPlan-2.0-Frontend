@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { backupFileName, createBackup, parseBackup } from './backup';
-import { initialPersistedState, STORE_VERSION } from '@farm/store/migrations';
+import { INITIAL_FARMS, INITIAL_FIELDS, INITIAL_PLANS } from '@farm/data/mockData';
+import { STORE_VERSION } from '@farm/store/migrations';
 
-const data = initialPersistedState();
+const data = { farms: INITIAL_FARMS, fields: INITIAL_FIELDS, plans: INITIAL_PLANS, activeFarmId: INITIAL_FARMS[0].id };
 const text = (value: unknown) => JSON.stringify(value);
 
 describe('backup', () => {
@@ -21,6 +22,30 @@ describe('backup', () => {
   it('does not include device preferences', () => {
     const backup = createBackup(data);
     expect(Object.keys(backup.data).sort()).toEqual(['activeFarmId', 'farms', 'fields', 'plans']);
+  });
+
+  it('accepts version 1 backups without owner and contact data', () => {
+    const v1Farms = data.farms.map(({ ownerName: _owner, contactEmail: _email, ...farm }) => farm);
+    const result = parseBackup(
+      text({ ...createBackup(data), version: 1, data: { ...createBackup(data).data, farms: v1Farms } }),
+    );
+    expect(result.ok && result.data.farms[0]).toMatchObject({
+      name: data.farms[0].name,
+      ownerName: '',
+      contactEmail: '',
+    });
+  });
+
+  it('fills field attributes missing in older backups with the server defaults', () => {
+    const oldFields = data.fields.map(({ cropType: _c, irrigation: _i, autoSpacing: _a, ...f }) => f);
+    const result = parseBackup(
+      text({ ...createBackup(data), data: { ...createBackup(data).data, fields: oldFields } }),
+    );
+    expect(result.ok && result.data.fields[0]).toMatchObject({
+      cropType: null,
+      irrigation: 'none',
+      autoSpacing: false,
+    });
   });
 
   it('names the file after the date', () => {

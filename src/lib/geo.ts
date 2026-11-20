@@ -25,6 +25,15 @@ export function polygonToLatLngRings(polygon: Polygon): LatLngTuple[][] {
   return polygon.coordinates.map((ring) => polygonToLatLngs({ type: 'Polygon', coordinates: [ring] }));
 }
 
+/** Centre of the bounding box of all polygons as Leaflet `[lat, lng]`; null without coordinates. */
+export function polygonsCenterLatLng(polygons: Polygon[]): LatLngTuple | null {
+  const positions = polygons.flatMap((p) => p.coordinates[0] ?? []);
+  if (positions.length === 0) return null;
+  const lngs = positions.map(([lng]) => lng);
+  const lats = positions.map(([, lat]) => lat);
+  return [(Math.min(...lats) + Math.max(...lats)) / 2, (Math.min(...lngs) + Math.max(...lngs)) / 2];
+}
+
 export function polygonAreaM2(polygon: Polygon): number {
   return turfArea(polygon);
 }

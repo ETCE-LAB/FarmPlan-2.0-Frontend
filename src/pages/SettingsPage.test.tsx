@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { renderWithRouter } from '@farm/test/utils';
 import { ConfirmDialogHost } from '@farm/components/shared/ConfirmDialogHost';
 import { Toaster } from '@farm/components/shared/Toaster';
 import { createBackup } from '@farm/lib/backup';
 import { useFarmStore } from '@farm/store/useFarmStore';
+import { useSessionStore } from '@farm/store/useSessionStore';
+import { gateway } from '@farm/test/fakeGateway';
 import SettingsPage from './SettingsPage';
 
 function renderSettings() {
@@ -44,7 +46,7 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Sicherung heruntergeladen.')).toBeInTheDocument();
   });
 
-  it('restores an uploaded backup after confirmation and can undo it', async () => {
+  it('imports an uploaded backup into the account as new farms', async () => {
     const snapshot = useFarmStore.getState().snapshot();
     const backup = createBackup({
       ...snapshot,
@@ -55,13 +57,27 @@ describe('SettingsPage', () => {
     const { container } = renderSettings();
 
     upload(container, JSON.stringify(backup));
-    const dialog = await screen.findByRole('dialog', { name: 'Sicherung einspielen?' });
+    const dialog = await screen.findByRole('dialog', { name: 'Sicherung importieren?' });
     expect(dialog).toHaveTextContent('1 Farmen und 2 Schläge');
-    fireEvent.click(screen.getByRole('button', { name: 'Einspielen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Importieren' }));
 
-    await waitFor(() => expect(useFarmStore.getState().farms.map((f) => f.id)).toEqual(['farm-2']));
-    fireEvent.click(screen.getByRole('button', { name: 'Rückgängig' }));
-    expect(useFarmStore.getState().farms).toHaveLength(2);
+    expect(await screen.findByText('1 Farm importiert.')).toBeInTheDocument();
+    expect(useFarmStore.getState().farms).toHaveLength(3);
+    expect(gateway.farms.size).toBe(3);
+  });
+
+  it('requires a login to import a backup', async () => {
+    act(() => useSessionStore.getState().logout());
+    const { container } = renderSettings();
+    upload(container, JSON.stringify(createBackup(useFarmStore.getState().snapshot())));
+    fireEvent.click(await screen.findByRole('button', { name: 'Importieren' }));
+    expect(await screen.findByText('Zum Importieren bitte anmelden.')).toBeInTheDocument();
+    expect(gateway.writes()).toEqual([]);
+  });
+
+  it('shows the signed-in account', () => {
+    renderSettings();
+    expect(screen.getByText('Angemeldet als Anna Test (anna@example.org)')).toBeInTheDocument();
   });
 
   it('keeps the data when the restore is cancelled', async () => {
@@ -80,13 +96,5 @@ describe('SettingsPage', () => {
     upload(container, '{"app":"something-else"}');
     expect(await screen.findByRole('alert')).toHaveTextContent('keine FarmPlan-Sicherung');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-  });
-
-  it('resets to demo data after confirmation', async () => {
-    useFarmStore.getState().deleteFarm('farm-1');
-    renderSettings();
-    fireEvent.click(screen.getByRole('button', { name: 'Lokale Daten auf Demo-Daten zurücksetzen' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Zurücksetzen' }));
-    await waitFor(() => expect(useFarmStore.getState().farms).toHaveLength(2));
   });
 });

@@ -1,27 +1,19 @@
 import { useRef } from 'react';
-import {
-  DatabaseBackup,
-  Download,
-  Monitor,
-  Moon,
-  RotateCcw,
-  Server,
-  Settings,
-  Sun,
-  TriangleAlert,
-  Upload,
-} from 'lucide-react';
+import { CircleCheck, DatabaseBackup, Download, Monitor, Moon, Server, Settings, Sun, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { PageHeader } from '@farm/components/shared/PageHeader';
 import { Card } from '@farm/components/ui/Card';
 import { Button } from '@farm/components/ui/Button';
 import { SelectField, TextField } from '@farm/components/ui/FormField';
 import { backupFileName, createBackup, parseBackup } from '@farm/lib/backup';
+import { API_BASE_URL } from '@farm/lib/api/client';
 import { downloadJson } from '@farm/lib/download';
 import { cn } from '@farm/lib/utils';
+import { importBackup } from '@farm/store/farmSync';
 import { useFarmStore } from '@farm/store/useFarmStore';
+import { useSessionUser } from '@farm/store/useSessionStore';
 import { confirmAction, showToast } from '@farm/store/useUiStore';
-import { mutateWithUndo } from '@farm/store/undo';
 import type { Language, ThemePreference } from '@farm/types';
 
 const THEME_OPTIONS = [
@@ -30,13 +22,12 @@ const THEME_OPTIONS = [
   { value: 'dark', icon: Moon },
 ] as const satisfies { value: ThemePreference; icon: unknown }[];
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
-
 function BackupCard() {
   const { t, i18n } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const farms = useFarmStore((s) => s.farms);
   const fields = useFarmStore((s) => s.fields);
+  const user = useSessionUser();
 
   const handleDownload = () => {
     downloadJson(backupFileName(), createBackup(useFarmStore.getState().snapshot()));
@@ -61,7 +52,13 @@ function BackupCard() {
       tone: 'danger',
     });
     if (!confirmed) return;
-    mutateWithUndo(() => useFarmStore.getState().restore(result.data), t('backup.restored'), t('common.undo'));
+    if (!user) {
+      showToast({ tone: 'error', message: t('backup.loginRequired') });
+      return;
+    }
+    const { created, failed } = await importBackup(result.data);
+    if (created > 0) showToast({ message: t('backup.restored', { count: created }) });
+    if (failed > 0) showToast({ tone: 'error', message: t('backup.restoreFailed', { count: failed }) });
   };
 
   return (
@@ -101,18 +98,7 @@ export default function SettingsPage() {
   const setLanguage = useFarmStore((s) => s.setLanguage);
   const theme = useFarmStore((s) => s.theme);
   const setTheme = useFarmStore((s) => s.setTheme);
-  const resetData = useFarmStore((s) => s.resetData);
-
-  const handleReset = async () => {
-    const confirmed = await confirmAction({
-      title: t('settings.resetTitle'),
-      message: t('settings.confirmReset'),
-      confirmLabel: t('settings.resetConfirmLabel'),
-      cancelLabel: t('common.cancel'),
-      tone: 'danger',
-    });
-    if (confirmed) mutateWithUndo(resetData, t('settings.resetDone'), t('common.undo'));
-  };
+  const user = useSessionUser();
 
   return (
     <>
@@ -157,20 +143,27 @@ export default function SettingsPage() {
 
         <Card title={t('settings.backendTitle')} icon={Server}>
           <div className="space-y-4 text-xs">
-            <div className="p-4 bg-warning-bg border border-warning-line rounded flex items-start gap-3">
-              <TriangleAlert size={20} aria-hidden className="text-warning-fg shrink-0" />
+            <div className="p-4 bg-surface-muted border border-line rounded flex items-start gap-3">
+              <CircleCheck size={20} aria-hidden className="text-brand-fg shrink-0" />
               <div>
-                <div className="font-semibold text-warning-fg">{t('settings.backendStatus')}</div>
-                <div className="text-warning-fg">{t('settings.backendStatusHint')}</div>
+                <div className="font-semibold text-ink">{t('settings.backendStatus')}</div>
+                <div className="text-ink-soft">{t('settings.backendStatusHint')}</div>
               </div>
             </div>
+            <p className="text-ink-soft">
+              {user
+                ? t('settings.signedInAs', { name: user.displayName, email: user.email })
+                : t('settings.notSignedIn')}
+              {user?.accountType === 'user' && (
+                <>
+                  {' '}
+                  <Link to="/account" className="font-semibold text-brand-fg hover:underline">
+                    {t('account.link')}
+                  </Link>
+                </>
+              )}
+            </p>
             <TextField label={t('settings.apiBaseUrl')} readOnly value={API_BASE_URL} className="max-w-md font-mono" />
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-line-subtle flex justify-end">
-            <Button variant="danger" size="md" icon={RotateCcw} onClick={() => void handleReset()}>
-              {t('settings.resetData')}
-            </Button>
           </div>
         </Card>
       </div>

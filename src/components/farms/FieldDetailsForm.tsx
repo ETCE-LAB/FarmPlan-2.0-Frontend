@@ -2,51 +2,71 @@ import { useState, type FormEvent } from 'react';
 import { Save, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@farm/components/ui/Button';
-import { TextField } from '@farm/components/ui/FormField';
+import { CheckboxField, SelectField, TextField } from '@farm/components/ui/FormField';
+import { IRRIGATION_TYPES } from '@farm/lib/fields';
 import { useFormat } from '@farm/lib/format';
 import { multiPolygonParts, netAreaM2, partsToMultiPolygon, polygonAreaM2 } from '@farm/lib/geo';
+import * as farmSync from '@farm/store/farmSync';
 import { useFarmStore } from '@farm/store/useFarmStore';
 import { showToast } from '@farm/store/useUiStore';
-import { mutateWithUndo } from '@farm/store/undo';
-import type { Field } from '@farm/types';
+import type { Field, Irrigation } from '@farm/types';
 
 export function FieldDetailsForm({ field, onDeleted }: { field: Field; onDeleted: () => void }) {
   const { t } = useTranslation();
   const format = useFormat();
-  const updateField = useFarmStore((s) => s.updateField);
-  const deleteField = useFarmStore((s) => s.deleteField);
 
   const [draft, setDraft] = useState({
     name: field.name,
     soilType: field.soilType ?? '',
     soilPh: field.soilPh === null ? '' : format.number(field.soilPh, 2),
+    cropType: field.cropType ?? '',
+    irrigation: field.irrigation,
+    autoSpacing: field.autoSpacing,
   });
 
   const zones = multiPolygonParts(field.excludedZones);
   const phValue = draft.soilPh.trim() === '' ? null : Number(draft.soilPh.replace(',', '.'));
   const phInvalid = phValue !== null && (!Number.isFinite(phValue) || phValue < 0 || phValue > 14);
 
-  const handleSave = (e: FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     if (phInvalid || !draft.name.trim()) return;
-    updateField(field.id, { name: draft.name.trim(), soilType: draft.soilType.trim() || null, soilPh: phValue });
-    showToast({ message: t('farms.fieldSaved', { name: draft.name.trim() }) });
+    const name = draft.name.trim();
+    const result = await farmSync.updateField(field.id, {
+      name,
+      soilType: draft.soilType.trim() || null,
+      soilPh: phValue,
+      cropType: draft.cropType.trim() || null,
+      irrigation: draft.irrigation,
+      autoSpacing: draft.autoSpacing,
+    });
+    // Failures are reported by the sync layer.
+    if (result.ok) showToast({ message: t('farms.fieldSaved', { name }) });
   };
 
   const removeZone = (index: number) =>
-    mutateWithUndo(
-      () => updateField(field.id, { excludedZones: partsToMultiPolygon(zones.filter((_, i) => i !== index)) }),
+    farmSync.mutateFieldsWithUndo(
+      field.farmId,
+      () =>
+        useFarmStore
+          .getState()
+          .updateField(field.id, { excludedZones: partsToMultiPolygon(zones.filter((_, i) => i !== index)) }),
       t('farms.exclusionDeleted'),
       t('common.undo'),
     );
 
   const handleDelete = () => {
-    mutateWithUndo(() => deleteField(field.id), t('farms.fieldDeleted', { name: field.name }), t('common.undo'));
+    farmSync.mutateFieldsWithUndo(
+      field.farmId,
+      () => useFarmStore.getState().deleteField(field.id),
+      t('farms.fieldDeleted', { name: field.name }),
+      t('common.undo'),
+    );
     onDeleted();
   };
 
   return (
-    <form onSubmit={handleSave} className="space-y-3 pt-3">
+    <form onSubmit={(e) => void handleSave(e)} className="space-y-3 pt-3">
       <TextField
         label={t('farms.fieldName')}
         required
@@ -69,6 +89,32 @@ export function FieldDetailsForm({ field, onDeleted }: { field: Field; onDeleted
           hint={phInvalid ? t('farms.soilPhInvalid') : undefined}
         />
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <TextField
+          label={t('farms.cropType')}
+          maxLength={120}
+          value={draft.cropType}
+          onChange={(e) => setDraft({ ...draft, cropType: e.target.value })}
+          placeholder={t('common.notDetermined')}
+        />
+        <SelectField
+          label={t('farms.irrigation')}
+          value={draft.irrigation}
+          onChange={(e) => setDraft({ ...draft, irrigation: e.target.value as Irrigation })}
+        >
+          {IRRIGATION_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {t(`farms.irrigationTypes.${type}`)}
+            </option>
+          ))}
+        </SelectField>
+      </div>
+      <CheckboxField
+        label={t('farms.autoSpacing')}
+        hint={t('farms.autoSpacingHint')}
+        checked={draft.autoSpacing}
+        onChange={(e) => setDraft({ ...draft, autoSpacing: e.target.checked })}
+      />
 
       {field.geometry && (
         <dl className="grid grid-cols-2 gap-2 text-xs">

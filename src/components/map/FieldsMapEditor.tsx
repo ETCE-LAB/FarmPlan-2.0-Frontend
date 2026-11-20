@@ -3,7 +3,7 @@ import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import type { Feature, LineString, MultiPolygon, Polygon } from 'geojson';
-import { Ban, Check, Info, PenTool, SquarePen, X } from 'lucide-react';
+import { Ban, Check, Fence, Info, PenTool, SquarePen, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@farm/components/ui/Button';
 import { multiPolygonParts, partsToMultiPolygon, polygonToLatLngRings } from '@farm/lib/geo';
@@ -23,7 +23,7 @@ export interface BackgroundShape {
   popupLines: string[];
 }
 
-type Mode = 'idle' | 'drawField' | 'drawExclusion' | 'edit';
+type Mode = 'idle' | 'drawField' | 'drawExclusion' | 'drawBoundary' | 'edit';
 
 interface FieldsMapEditorProps {
   fields: EditorField[];
@@ -32,6 +32,10 @@ interface FieldsMapEditorProps {
   onCreateField: (geometry: Polygon) => void;
   onChangeFieldGeometry: (id: string, geometry: Polygon) => void;
   onChangeExclusions?: (fieldId: string, zones: MultiPolygon | null) => void;
+  /** Farm boundary; drawing and editing are offered when `onChangeBoundary` is set. */
+  boundary?: Polygon | null;
+  /** Called with the new boundary, or `null` when the user removes it. */
+  onChangeBoundary?: (boundary: Polygon | null) => void;
   treelines?: LineString[];
   background?: BackgroundShape[];
   fitKey?: string;
@@ -45,6 +49,7 @@ const COLORS = {
   exclusion: '#be123c',
   treeline: '#7c3aed',
   background: '#64748b',
+  boundary: '#1d4ed8',
 };
 
 function layerToPolygon(layer: L.Polygon): Polygon {
@@ -58,6 +63,8 @@ export function FieldsMapEditor({
   onCreateField,
   onChangeFieldGeometry,
   onChangeExclusions,
+  boundary = null,
+  onChangeBoundary,
   treelines = [],
   background = [],
   fitKey = '',
@@ -81,10 +88,12 @@ export function FieldsMapEditor({
       );
     } else if (mode === 'drawField') {
       onCreateField(geometry);
+    } else if (mode === 'drawBoundary') {
+      onChangeBoundary?.(geometry);
     }
   });
   const handleDrawEnd = useEffectEvent(() => {
-    if (mode === 'drawField' || mode === 'drawExclusion') setMode('idle');
+    if (mode === 'drawField' || mode === 'drawExclusion' || mode === 'drawBoundary') setMode('idle');
   });
   const handleFieldEdit = useEffectEvent((id: string, layer: L.Polygon) =>
     onChangeFieldGeometry(id, layerToPolygon(layer)),
@@ -94,6 +103,7 @@ export function FieldsMapEditor({
     parts[index] = layerToPolygon(layer);
     onChangeExclusions?.(field.id, partsToMultiPolygon(parts));
   });
+  const handleBoundaryEdit = useEffectEvent((layer: L.Polygon) => onChangeBoundary?.(layerToPolygon(layer)));
   const handleSelect = useEffectEvent((id: string) => onSelectField(id));
 
   useEffect(() => {
@@ -114,8 +124,8 @@ export function FieldsMapEditor({
 
   useEffect(() => {
     if (!map) return;
-    if (mode === 'drawField' || mode === 'drawExclusion') {
-      const color = mode === 'drawField' ? COLORS.field : COLORS.exclusion;
+    if (mode === 'drawField' || mode === 'drawExclusion' || mode === 'drawBoundary') {
+      const color = mode === 'drawField' ? COLORS.field : mode === 'drawBoundary' ? COLORS.boundary : COLORS.exclusion;
       map.pm.enableDraw('Polygon', {
         allowSelfIntersection: false,
         snappable: true,
@@ -143,6 +153,23 @@ export function FieldsMapEditor({
       })
         .bindPopup(popupElement(shape.popupLines))
         .addTo(group);
+    }
+
+    // The boundary goes first, so fields drawn on top of it stay clickable.
+    if (boundary) {
+      const boundaryLayer = L.polygon(polygonToLatLngRings(boundary), {
+        color: COLORS.boundary,
+        fillColor: COLORS.boundary,
+        fillOpacity: 0.04,
+        weight: 3,
+        dashArray: '10,6',
+      })
+        .bindTooltip(t('map.boundary'), { sticky: true })
+        .addTo(group);
+      if (editing && onChangeBoundary) {
+        boundaryLayer.pm.enable({ allowSelfIntersection: false });
+        boundaryLayer.on('pm:edit', () => handleBoundaryEdit(boundaryLayer));
+      }
     }
 
     for (const field of fields) {
@@ -187,16 +214,17 @@ export function FieldsMapEditor({
     return () => {
       group.remove();
     };
-  }, [map, fields, background, treelines, selectedFieldId, mode, t, onChangeExclusions]);
+  }, [map, fields, background, boundary, treelines, selectedFieldId, mode, t, onChangeExclusions, onChangeBoundary]);
 
   useEffect(() => {
     if (!map || fittedKeyRef.current === fitKey) return;
-    const shapes = fields.length > 0 ? fields.map((f) => f.geometry) : background.map((b) => b.geometry);
+    const own = [...(boundary ? [boundary] : []), ...fields.map((f) => f.geometry)];
+    const shapes = own.length > 0 ? own : background.map((b) => b.geometry);
     if (shapes.length === 0) return;
     const bounds = L.latLngBounds(shapes.flatMap((g) => polygonToLatLngRings(g)[0]));
     map.fitBounds(bounds, { padding: [24, 24], maxZoom: 17 });
     fittedKeyRef.current = fitKey;
-  }, [map, fitKey, fields, background]);
+  }, [map, fitKey, fields, background, boundary]);
 
   const focusSelectedField = useEffectEvent(() => {
     const field = fields.find((f) => f.id === selectedFieldId);
@@ -208,7 +236,7 @@ export function FieldsMapEditor({
   }, [map, selectedFieldId]);
 
   const hint =
-    mode === 'drawField' || mode === 'drawExclusion'
+    mode === 'drawField' || mode === 'drawExclusion' || mode === 'drawBoundary'
       ? t('map.hints.draw')
       : mode === 'edit'
         ? t('map.hints.edit')
@@ -233,7 +261,22 @@ export function FieldsMapEditor({
                 {t('map.drawExclusion')}
               </Button>
             )}
-            <Button variant="secondary" icon={SquarePen} disabled={fields.length === 0} onClick={() => setMode('edit')}>
+            {onChangeBoundary &&
+              (boundary ? (
+                <Button variant="secondary" icon={Trash2} onClick={() => onChangeBoundary(null)}>
+                  {t('map.removeBoundary')}
+                </Button>
+              ) : (
+                <Button variant="secondary" icon={Fence} onClick={() => setMode('drawBoundary')}>
+                  {t('map.drawBoundary')}
+                </Button>
+              ))}
+            <Button
+              variant="secondary"
+              icon={SquarePen}
+              disabled={fields.length === 0 && !(boundary && onChangeBoundary)}
+              onClick={() => setMode('edit')}
+            >
               {t('map.editShapes')}
             </Button>
           </>
